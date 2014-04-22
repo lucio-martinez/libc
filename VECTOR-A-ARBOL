@@ -1,0 +1,175 @@
+//      main.c
+//
+//      Copyright 2012, 2014 Lucio <luciomartinez at openmailbox dot org>
+//
+//      This program is free software; you can redistribute it and/or modify
+//      it under the terms of the GNU General Public License as published by
+//      the Free Software Foundation; either version 2 of the License, or
+//      (at your option) any later version.
+//
+//      This program is distributed in the hope that it will be useful,
+//      but WITHOUT ANY WARRANTY; without even the implied warranty of
+//      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//      GNU General Public License for more details.
+//
+//      You should have received a copy of the GNU General Public License
+//      along with this program; if not, write to the Free Software
+//      Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+//      MA 02110-1301, USA.
+//
+//
+
+
+#include <stdio.h>
+#include <stdlib.h>
+
+
+typedef struct str{
+	int dato;
+	struct str * izq;
+	struct str * der;
+}nodo;
+
+
+void inicArbol(nodo ** Arbol){
+	*Arbol=NULL;
+}
+
+nodo * CrearHoja(int N){
+	nodo * Nuevo=(nodo*)malloc(sizeof(nodo));
+	Nuevo->dato=N;
+	Nuevo->izq=NULL;
+	Nuevo->der=NULL;
+	return Nuevo;
+}
+
+nodo * Insertar(nodo * Arbol, int N){
+	if (Arbol==NULL) {
+		Arbol=CrearHoja(N);
+	} else {
+		if (Arbol->dato > N) {
+			Arbol->izq=Insertar(Arbol->izq,N);
+		} else {
+			Arbol->der=Insertar(Arbol->der,N);
+		}
+	}
+	return Arbol;
+}
+
+nodo * CargarArbol(int vec[], int Tope){
+	nodo * NuevoArbol;
+	inicArbol(&NuevoArbol);
+	int j;
+	for (j=0; j<Tope; j++) {
+		NuevoArbol=Insertar(NuevoArbol,vec[j]);
+	}
+	return NuevoArbol;
+}
+
+void MostrarArbol(nodo * Arbol){
+	if (Arbol!=NULL) {
+		MostrarArbol(Arbol->izq);
+		printf("| %d |",Arbol->dato);
+		MostrarArbol(Arbol->der);
+	}
+}
+
+int Rango(int Tope){
+	int RANGO=2;
+	int aux=Tope/10;
+	if (aux>RANGO) {
+		RANGO=aux;
+		RANGO*=2;
+	}
+	return RANGO;
+}
+
+nodo * CAIzq(int vec[], int resto[], int *sig, int Tope, int Rango, int Pos){
+	nodo * aux;
+	inicArbol(&aux);
+	if (Pos>0) {
+		resto[*sig]=Pos-1;
+		*sig+=1;
+
+		aux=CrearHoja(vec[Pos-1]);
+		aux->izq=CAIzq(vec,resto,sig,Tope,Rango,Pos-Rango);
+	}
+	return aux;
+}
+
+nodo * CADer(int vec[], int resto[], int *sig, int Tope, int Rango, int Pos){
+	nodo * aux;
+	inicArbol(&aux);
+	if (Pos<=Tope) {
+		resto[*sig]=Pos-1;
+		*sig+=1;
+
+		aux=CrearHoja(vec[Pos-1]);
+		aux->der=CADer(vec,resto,sig,Tope,Rango,Pos+Rango);
+	}
+	return aux;
+}
+
+void RellenarArbol(nodo ** Arbol, int vec[], int TopeV, int resto[], int TopeR){
+	int j,i,aux;
+	//ORDENAMIENTO DEL VECTOR RESTO
+	for (j=0; j<TopeR-1; j++) {
+		for (i=j+1; i<TopeR; i++)	{
+			if (resto[j]>resto[i]) {
+				aux=resto[j];
+				resto[j]=resto[i];
+				resto[i]=aux;
+			}
+		}
+	}
+	for (j=TopeR; j<TopeV; j++) {
+		resto[j]=0;
+	}
+	i=0;
+	//INSERCION DE DATOS EN ARBOL
+	for (j=0; j<TopeV; j++) {
+		aux=resto[i];
+		if (j!=aux)
+			*Arbol=Insertar(*Arbol,vec[j]);
+		else
+			i++;
+	}
+}
+
+nodo * CargarArbolIA(int vec[], int Tope){
+	//Contendra las POSICIONES UTILIZADAS del
+	//vector original
+	int resto[Tope-1];
+	//SIG contiene el tope del vector RESTO
+	int sig=0;
+
+	nodo * Arbol;
+	inicArbol(&Arbol);
+	int aux=Rango(Tope);
+	int Mitad=Tope/2;
+	resto[sig]=Mitad-1;
+	sig++;
+
+	Arbol=CrearHoja(vec[Mitad-1]);
+	Arbol->izq=CAIzq(vec,resto,&sig,Tope,aux,Mitad-aux);
+	Arbol->der=CADer(vec,resto,&sig,Tope,aux,Mitad+aux);
+	RellenarArbol(&Arbol,vec,Tope,resto,sig);
+	return Arbol;
+}
+
+
+int main(int argc, char **argv)
+{
+	nodo * Arbol;
+	inicArbol(&Arbol);
+	int Tope=6;
+	int vec[]={5,0,9,3,1,7}; //Tope=6
+	//Arbol=CargarArbol(vec,Tope);
+	//MostrarArbol(Arbol);
+	Arbol=CargarArbolIA(vec,Tope);
+	printf("\n\n");
+	MostrarArbol(Arbol);
+
+	return 0;
+}
+
